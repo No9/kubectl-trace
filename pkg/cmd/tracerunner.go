@@ -22,6 +22,7 @@ type TraceRunnerOptions struct {
 	inPod              bool
 	programPath        string
 	bpftraceBinaryPath string
+	initUsdt           bool
 }
 
 func NewTraceRunnerOptions() *TraceRunnerOptions {
@@ -51,6 +52,7 @@ func NewTraceRunnerCommand() *cobra.Command {
 	cmd.Flags().StringVarP(&o.programPath, "program", "f", "program.bt", "Specify the bpftrace program path")
 	cmd.Flags().StringVarP(&o.bpftraceBinaryPath, "bpftracebinary", "b", "/bin/bpftrace", "Specify the bpftrace binary path")
 	cmd.Flags().BoolVar(&o.inPod, "inpod", false, "Whether or not run this bpftrace in a pod's container process namespace")
+	cmd.Flags().BoolVar(&o.initUsdt, "usdt", o.initUsdt, "Initialize the USDT probes")
 	return cmd
 }
 
@@ -68,6 +70,8 @@ func (o *TraceRunnerOptions) Complete(cmd *cobra.Command, args []string) error {
 }
 
 func (o *TraceRunnerOptions) Run() error {
+	var cmdArgs []string
+	var pid string
 	programPath := o.programPath
 	if o.inPod == true {
 		pid, err := findPidByPodContainer(o.podUID, o.containerName)
@@ -115,8 +119,12 @@ func (o *TraceRunnerOptions) Run() error {
 			}
 		}
 	}()
-
-	c := exec.CommandContext(ctx, o.bpftraceBinaryPath, programPath)
+	cmdArgs = append(cmdArgs, programPath)
+	if o.initUsdt {
+		cmdArgs = append(cmdArgs, "-p")
+		cmdArgs = append(cmdArgs, pid)
+	}
+	c := exec.CommandContext(ctx, o.bpftraceBinaryPath, cmdArgs...)
 	c.Stdout = os.Stdout
 	c.Stdin = os.Stdin
 	c.Stderr = os.Stderr

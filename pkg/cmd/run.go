@@ -11,7 +11,7 @@ import (
 	"github.com/iovisor/kubectl-trace/pkg/signals"
 	"github.com/iovisor/kubectl-trace/pkg/tracejob"
 	"github.com/spf13/cobra"
-	"k8s.io/api/core/v1"
+	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/util/uuid"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -79,6 +79,7 @@ type RunOptions struct {
 	isPod       bool
 	podUID      string
 	nodeName    string
+	usdt        bool
 
 	clientConfig *rest.Config
 }
@@ -127,6 +128,7 @@ func NewRunCommand(factory factory.Factory, streams genericclioptions.IOStreams)
 	cmd.Flags().StringVar(&o.imageName, "imagename", o.imageName, "Custom image for the tracerunner")
 	cmd.Flags().StringVar(&o.initImageName, "init-imagename", o.initImageName, "Custom image for the init container responsible to fetch and prepare linux headers")
 	cmd.Flags().BoolVar(&o.fetchHeaders, "fetch-headers", o.fetchHeaders, "Whether to fetch linux headers or not")
+	cmd.Flags().BoolVarP(&o.usdt, "usdt", "u", o.usdt, "Enable USDT probes - requires a container")
 
 	return cmd
 }
@@ -302,6 +304,7 @@ func (o *RunOptions) Run() error {
 		ImageNameTag:     o.imageName,
 		InitImageNameTag: o.initImageName,
 		FetchHeaders:     o.fetchHeaders,
+		InitUsdt:         o.usdt,
 	}
 
 	job, err := tc.CreateJob(tj)

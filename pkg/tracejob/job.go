@@ -35,6 +35,7 @@ type TraceJob struct {
 	ImageNameTag     string
 	InitImageNameTag string
 	FetchHeaders     bool
+	InitUsdt         bool
 	StartTime        metav1.Time
 	Status           TraceJobStatus
 }
