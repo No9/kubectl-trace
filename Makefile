@@ -22,7 +22,8 @@ IMAGE_INITCONTAINER_COMMIT := $(IMAGE_NAME_INIT):$(GIT_COMMIT)
 IMAGE_INITCONTAINER_LATEST := $(IMAGE_NAME_INIT):latest
 
 BPFTRACESHA ?= 81b099f094d2e6092cfe1317cbaaba0c1bbb614f
-BCCVERSION ?= 0.8.0
+BCCVERSION ?= 0.9.0
+LIBBPFSHA ?= e60460f4e5137ab0c4aa4994fd30ada30ab31415
 IMAGE_BPFTRACE_BASE := $(IMAGE_NAME_BASE):$(BPFTRACESHA)
 
 IMAGE_BUILD_FLAGS ?= "--no-cache"
@@ -88,7 +89,8 @@ integration:
 
 .PHONY: bpftraceimage/build
 bpftraceimage/build:
-	$(DOCKER) build --build-arg bccversion=$(BCCVERSION) --build-arg bpftracesha=$(BPFTRACESHA) $(IMAGE_BUILD_FLAGS) -t $(IMAGE_BPFTRACE_BASE) -f Dockerfile.bpftracebase .
+	$(DOCKER) build --build-arg bccversion=$(BCCVERSION) --build-arg bpftracesha=$(BPFTRACESHA) --build-arg libbpfsha=$(LIBBPFSHA) \
+	$(IMAGE_BUILD_FLAGS) -t $(IMAGE_BPFTRACE_BASE) -f Dockerfile.bpftracebase .
 
 .PHONY: bpftraceimage/push
 bpftraceimage/push:
