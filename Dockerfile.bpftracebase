@@ -1,53 +1,15 @@
-FROM alpine:3.8 as builder
+FROM ubuntu:19.04 as builder
 ARG bpftracesha
 ARG bccversion
 ARG libbpfsha
-ENV STATIC_LINKING=ON
-ENV RUN_TESTS=0
-RUN apk add --update \
-  bison \
-  build-base \
-  clang-dev \
-  clang-static \
-  curl \
-  cmake \
-  elfutils-dev \
-  flex-dev \
-  git \
-  linux-headers \
-  llvm5-dev \
-  llvm5-static \
-  python \
-  zlib-dev
 
-# Put LLVM directories where CMake expects them to be
-RUN ln -s /usr/lib/cmake/llvm5 /usr/lib/cmake/llvm
-RUN ln -s /usr/include/llvm5/llvm /usr/include/llvm
-RUN ln -s /usr/include/llvm5/llvm-c /usr/include/llvm-c
-
-WORKDIR /
-RUN curl -L https://github.com/iovisor/bcc/archive/v${bccversion}.tar.gz \
-  --output /bcc.tar.gz
-RUN tar xf /bcc.tar.gz
-RUN mv bcc-${bccversion} bcc
-
-ADD https://github.com/libbpf/libbpf/archive/${libbpfsha}.tar.gz /libbpf.tar.gz
-RUN tar -xf /libbpf.tar.gz 
-RUN mv libbpf-${libbpfsha}/* /bcc/src/cc/libbpf
-RUN cp /bcc/src/cc/libbpf/include/uapi/linux/* /usr/include
-
-RUN cd /bcc && mkdir build && cd build && cmake .. && make install -j4 && \
-  cp src/cc/libbcc.a /usr/local/lib64/libbcc.a && \
-  cp src/cc/libbcc-loader-static.a /usr/local/lib64/libbcc-loader-static.a && \
-  cp src/cc/libbpf.a /usr/local/lib64/libbpf.a
-
-ADD https://github.com/iovisor/bpftrace/archive/${bpftracesha}.tar.gz /bpftrace.tar.gz
-RUN tar -xvf /bpftrace.tar.gz
-
-RUN mv bpftrace-${bpftracesha} /bpftrace
-
-WORKDIR /bpftrace
-
-WORKDIR /bpftrace/docker
-
-RUN sh build.sh /bpftrace/build-release Release bpftrace
+RUN apt-get update
+RUN apt-get install -y libbpfcc-dev
+RUN apt-get install -y bison cmake flex g++ git libelf-dev zlib1g-dev libfl-dev systemtap-sdt-dev
+RUN apt-get install -y llvm-7-dev llvm-7-runtime libclang-7-dev clang-7
+RUN git clone https://github.com/iovisor/bpftrace
+RUN mkdir bpftrace/build 
+WORKDIR /bpftrace/build
+RUN cmake -DCMAKE_BUILD_TYPE=Release ..
+RUN make -j8 bpftrace
+RUN make install

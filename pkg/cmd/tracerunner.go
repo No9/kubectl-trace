@@ -9,6 +9,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -52,7 +53,7 @@ func NewTraceRunnerCommand() *cobra.Command {
 	cmd.Flags().StringVarP(&o.programPath, "program", "f", "program.bt", "Specify the bpftrace program path")
 	cmd.Flags().StringVarP(&o.bpftraceBinaryPath, "bpftracebinary", "b", "/bin/bpftrace", "Specify the bpftrace binary path")
 	cmd.Flags().BoolVar(&o.inPod, "inpod", false, "Whether or not run this bpftrace in a pod's container process namespace")
-	cmd.Flags().BoolVar(&o.initUsdt, "usdt", o.initUsdt, "Initialize the USDT probes")
+	cmd.Flags().BoolVarP(&o.initUsdt, "usdt", "u", o.initUsdt, "Initialize the USDT probes")
 	return cmd
 }
 
@@ -70,9 +71,14 @@ func (o *TraceRunnerOptions) Complete(cmd *cobra.Command, args []string) error {
 }
 
 func (o *TraceRunnerOptions) Run() error {
+	fmt.Println("Calling the Run in trace runner with the value: ", strconv.FormatBool(o.initUsdt))
 	var cmdArgs []string
-	var pid string
 	programPath := o.programPath
+
+	if o.initUsdt {
+
+	}
+
 	if o.inPod == true {
 		pid, err := findPidByPodContainer(o.podUID, o.containerName)
 		if err != nil {
@@ -89,7 +95,10 @@ func (o *TraceRunnerOptions) Run() error {
 			return err
 		}
 		programPath = path.Join(os.TempDir(), "program-container.bt")
+		// cmdArgs = append(cmdArgs, "-p")
+		// cmdArgs = append(cmdArgs, *pid)
 		r := strings.Replace(string(f), "$container_pid", *pid, -1)
+		fmt.Println(r)
 		if err := ioutil.WriteFile(programPath, []byte(r), 0755); err != nil {
 			return err
 		}
@@ -119,11 +128,11 @@ func (o *TraceRunnerOptions) Run() error {
 			}
 		}
 	}()
-	cmdArgs = append(cmdArgs, programPath)
-	if o.initUsdt {
-		cmdArgs = append(cmdArgs, "-p")
-		cmdArgs = append(cmdArgs, pid)
-	}
+
+	fmt.Println(o.bpftraceBinaryPath)
+	cmdArgs = append(cmdArgs, "-p", *pid, programPath)
+	fmt.Println(cmdArgs)
+
 	c := exec.CommandContext(ctx, o.bpftraceBinaryPath, cmdArgs...)
 	c.Stdout = os.Stdout
 	c.Stdin = os.Stdin
