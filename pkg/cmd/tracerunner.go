@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"os/signal"
 	"path"
-	"strconv"
 	"strings"
 	"syscall"
 
@@ -71,7 +70,6 @@ func (o *TraceRunnerOptions) Complete(cmd *cobra.Command, args []string) error {
 }
 
 func (o *TraceRunnerOptions) Run() error {
-	fmt.Println("Calling the Run in trace runner with the value: ", strconv.FormatBool(o.initUsdt))
 	var cmdArgs []string
 	programPath := o.programPath
 
@@ -95,10 +93,8 @@ func (o *TraceRunnerOptions) Run() error {
 			return err
 		}
 		programPath = path.Join(os.TempDir(), "program-container.bt")
-		// cmdArgs = append(cmdArgs, "-p")
-		// cmdArgs = append(cmdArgs, *pid)
+		cmdArgs = append(cmdArgs, "-p", *pid, programPath)
 		r := strings.Replace(string(f), "$container_pid", *pid, -1)
-		fmt.Println(r)
 		if err := ioutil.WriteFile(programPath, []byte(r), 0755); err != nil {
 			return err
 		}
@@ -128,10 +124,6 @@ func (o *TraceRunnerOptions) Run() error {
 			}
 		}
 	}()
-
-	fmt.Println(o.bpftraceBinaryPath)
-	cmdArgs = append(cmdArgs, "-p", *pid, programPath)
-	fmt.Println(cmdArgs)
 
 	c := exec.CommandContext(ctx, o.bpftraceBinaryPath, cmdArgs...)
 	c.Stdout = os.Stdout

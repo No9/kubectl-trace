@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
-	"strconv"
 
 	"github.com/iovisor/kubectl-trace/pkg/attacher"
 	"github.com/iovisor/kubectl-trace/pkg/factory"
@@ -120,8 +119,6 @@ func NewRunCommand(factory factory.Factory, streams genericclioptions.IOStreams)
 			return nil
 		},
 	}
-	fmt.Println(o)
-	fmt.Println("Options")
 
 	cmd.Flags().StringVarP(&o.container, "container", "c", o.container, "Specify the container")
 	cmd.Flags().BoolVarP(&o.attach, "attach", "a", o.attach, "Whether or not to attach to the trace program once it is created")
@@ -132,7 +129,7 @@ func NewRunCommand(factory factory.Factory, streams genericclioptions.IOStreams)
 	cmd.Flags().StringVar(&o.initImageName, "init-imagename", o.initImageName, "Custom image for the init container responsible to fetch and prepare linux headers")
 	cmd.Flags().BoolVar(&o.fetchHeaders, "fetch-headers", o.fetchHeaders, "Whether to fetch linux headers or not")
 	cmd.Flags().BoolVarP(&o.usdt, "usdt", "u", o.usdt, "Enable USDT probes - requires a container")
-	fmt.Println("Created a usdt flag", strconv.FormatBool(o.usdt))
+
 	return cmd
 }
 
@@ -294,7 +291,7 @@ func (o *RunOptions) Run() error {
 		JobClient:    jobsClient.Jobs(o.namespace),
 		ConfigClient: coreClient.ConfigMaps(o.namespace),
 	}
-	fmt.Println("Calling the USDT with the value: ", strconv.FormatBool(o.usdt))
+
 	tj := tracejob.TraceJob{
 		Name:           fmt.Sprintf("%s%s", meta.ObjectNamePrefix, string(juid)),
 		Namespace:      o.namespace,
